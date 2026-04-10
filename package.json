@@ -1,0 +1,19 @@
+{
+  "name": "podium-mcp-server",
+  "version": "1.0.0",
+  "description": "Podium MCP server — exposes LinkedIn post generation tools (hooks, posts, trending topics, improvements) for Claude.ai integration.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "express": "^4.21.2"
+  }
+}
