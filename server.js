@@ -7,9 +7,9 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Config
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
@@ -22,11 +22,11 @@ if (!ANTHROPIC_API_KEY) {
 
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // System prompts — kept identical to Podium's LinkedIn ghostwriter prompts.
 // Core identity: professional LinkedIn ghostwriter, no hashtags, no emojis,
 // short punchy paragraphs.
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const FULL_PROFILE_HOOK_SYSTEM = `You are a LinkedIn ghostwriter who writes in the exact voice and style of the author described below. Study their voice samples carefully — match their sentence structure, vocabulary, rhythm, and personality. Hooks should feel like something this specific person would write, not a generic content creator. Use short, punchy sentences. No hashtags, no emojis. Return valid JSON only — an array of 4 strings.`
 
@@ -40,9 +40,9 @@ const IMPROVE_POST_SYSTEM = `You are an expert LinkedIn ghostwriter. Improve the
 
 const TRENDING_SYSTEM = `You are a LinkedIn content strategist tracking business conversations. Suggest 8 current trending topics that business-focused LinkedIn creators are actively discussing right now. Cover a mix of: leadership and management, AI and the future of work, entrepreneurship and startups, and customer experience and operations. Each topic should be 3-7 words, specific, timely, and post-worthy — not a generic category like "Leadership Tips". Return valid JSON only — an array of 8 strings.`
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Helpers
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 function stripMarkdownFences(text) {
   return text.replace(/```(?:json)?\s*\n?/g, '').replace(/```\s*$/g, '').trim()
@@ -89,9 +89,9 @@ async function callClaude({ systemPrompt, userPrompt, maxTokens = 1024 }) {
   return block.text
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Tool implementations
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function generateHooks({ topic, writing_style, user_profile }) {
   if (!topic || typeof topic !== 'string') {
@@ -147,8 +147,6 @@ async function generatePost({ topic, selected_hook, writing_style, user_profile,
 }
 
 async function getTrendingTopics() {
-  // Prefer GNews when configured — matches Podium's live trending feed.
-  // Otherwise ask Claude for 8 plausible current business topics.
   if (GNEWS_API_KEY) {
     try {
       const query = 'leadership OR "artificial intelligence" OR entrepreneurship OR "customer experience" OR "future of work"'
@@ -203,14 +201,19 @@ async function improvePost({ existing_post, instruction }) {
   return raw.trim()
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // MCP server setup
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const TOOLS = [
   {
     name: 'generate_hooks',
     description: 'Generate 4 LinkedIn opening hooks for a given topic and writing style. Optionally personalised to a user profile.',
+    annotations: {
+      title: 'Generate LinkedIn Hooks',
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -244,6 +247,11 @@ const TOOLS = [
   {
     name: 'generate_post',
     description: 'Generate a full LinkedIn post from a topic, selected hook, and writing style. Optionally personalised to a user profile.',
+    annotations: {
+      title: 'Generate LinkedIn Post',
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -285,6 +293,11 @@ const TOOLS = [
   {
     name: 'get_trending_topics',
     description: 'Return 8 current trending business and LinkedIn topics. Uses GNews when configured; otherwise Claude-generated suggestions.',
+    annotations: {
+      title: 'Get Trending Topics',
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {},
@@ -293,6 +306,11 @@ const TOOLS = [
   {
     name: 'improve_post',
     description: 'Improve an existing LinkedIn post based on a natural-language instruction (e.g. "make it shorter", "add more data", "more contrarian").',
+    annotations: {
+      title: 'Improve LinkedIn Post',
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -367,9 +385,9 @@ function createMcpServer() {
   return server
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Express app — stateless Streamable HTTP transport
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const app = express()
 app.use(express.json({ limit: '4mb' }))
@@ -402,8 +420,7 @@ app.get('/health', (_req, res) => {
   })
 })
 
-// MCP endpoint — stateless: each request builds a fresh server + transport,
-// which is the pattern that works cleanly on Railway and behind proxies.
+// MCP endpoint — stateless: each request builds a fresh server + transport.
 app.post('/mcp', async (req, res) => {
   try {
     const server = createMcpServer()
@@ -447,7 +464,7 @@ app.delete('/mcp', (_req, res) => {
   })
 })
 
-// Root — friendly info page so hitting the base URL in a browser doesn't 404.
+// Root — friendly info page.
 app.get('/', (_req, res) => {
   res.json({
     service: 'podium-mcp-server',
