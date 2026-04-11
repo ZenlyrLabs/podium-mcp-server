@@ -408,6 +408,18 @@ app.use((req, res, next) => {
   next()
 })
 
+// Favicon — gold rounded square (#c8a84b) with black "P"
+const FAVICON_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAbElEQVR4nO3XQQ4AEAwEQP/zUU/xK24ulCi1wkp6cthJqKhzworBp50l5ZiGTmFOhTcRp8MrxN8AVHhBEDB5ZmLBAVqECtCDQQCjPQLeuwPwLoC/A9owAghYBlgUAfhPKQFXjGZXDKfWGCknA+hJ5I6RyBdjAAAAAElFTkSuQmCC',
+  'base64'
+)
+
+app.get('/favicon.ico', (_req, res) => {
+  res.setHeader('Content-Type', 'image/png')
+  res.setHeader('Cache-Control', 'public, max-age=604800')
+  res.end(FAVICON_PNG)
+})
+
 // Health check
 app.get('/health', (_req, res) => {
   res.json({
